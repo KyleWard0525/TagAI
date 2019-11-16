@@ -20,17 +20,26 @@ public class Map extends javax.swing.JFrame {
     private GameEngine engine;
     private AIPlayer player1;
     private AIPlayer player2;
+    private int games = 0;
+    private Obstacle[] obstacles;
+    private int numObstacles = 10;
     
     /**
      * Creates new form Map
      */
     public Map() {
         initComponents();
+        this.setSize(800,800);
     }
 
     public void start()
     {
         player1 = engine.getPlayer1();
+        player2 = engine.getPlayer2();
+        
+        //Load networks
+        player1.loadFromFile(player1.getName() + ".model");
+        player2.loadFromFile(player2.getName() + ".model");
         
         if(player1.IsIt())
         {
@@ -41,9 +50,26 @@ public class Map extends javax.swing.JFrame {
          lblIt.setForeground(Color.BLUE);
          lblIt.setText("Blue (Player 2) Is It!");
         }
+        
         Thread engineThread = new Thread(engine);
         engineThread.start();
+        
     }
+    
+    public void createObstacles()
+    {
+        this.obstacles = new Obstacle[numObstacles];
+        JPanel[] obsSprites = new JPanel[numObstacles];
+        
+        //Create obstacle objects
+        for(int i = 0; i < numObstacles; i++)
+        {
+            obstacles[i] = new Obstacle();
+            obsSprites[i] = obstacles[i].createSprite();
+            GamePanel.add(obsSprites[i]);
+        }
+    }
+    
     
     /**
      * Handles all value updates and GUI changes upon end of game
@@ -84,6 +110,15 @@ public class Map extends javax.swing.JFrame {
             lblIt.setText("Red (Player 1) Is It!");  
         }
         
+        //Increment games played
+        games++;
+        
+        //Check if game should be saved
+        if(games % 10 == 0)
+        {
+            p1.save();
+            p2.save();
+        }
         
         p1.x = (int) Math.random() * GamePanel.getWidth()/2;
         p1.y = (int) Math.random() * GamePanel.getHeight()/2;
@@ -142,6 +177,11 @@ public class Map extends javax.swing.JFrame {
 
         GamePanel.setBackground(new java.awt.Color(0, 0, 0));
         GamePanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        GamePanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                GamePanelMouseClicked(evt);
+            }
+        });
 
         javax.swing.GroupLayout GamePanelLayout = new javax.swing.GroupLayout(GamePanel);
         GamePanel.setLayout(GamePanelLayout);
@@ -212,6 +252,17 @@ public class Map extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void GamePanelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_GamePanelMouseClicked
+        Obstacle o = new Obstacle();
+        o.setX(evt.getX());
+        o.setY(evt.getY());
+        
+        JPanel obs = new JPanel();
+        obs.setBounds(o.getX(), o.getY(), o.getHeight(), o.getWidth());
+        obs.setForeground(Color.white);
+        GamePanel.add(obs);
+    }//GEN-LAST:event_GamePanelMouseClicked
+
     /**
      * @param args the command line arguments
      */
@@ -261,8 +312,14 @@ public class Map extends javax.swing.JFrame {
     public JPanel getGamePanel() {
         return GamePanel;
     }
-    
-    
+
+    public Obstacle[] getObstacles() {
+        return obstacles;
+    }
+
+    public void setObstacles(Obstacle[] obstacles) {
+        this.obstacles = obstacles;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel GamePanel;
