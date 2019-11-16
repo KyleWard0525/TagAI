@@ -9,6 +9,11 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import static java.lang.Math.abs;
 import java.util.Arrays;
 import javax.swing.JPanel;
@@ -50,6 +55,7 @@ public class AIPlayer {
     private int wins = 0;
     private AIPlayer opponent;
     private JPanel gamePanel;
+    private String name;
 
     /**
      * Default Constructor
@@ -132,6 +138,114 @@ public class AIPlayer {
         network = (NEATNetwork) trainer.getCODEC().decode(trainer.getBestGenome());
 
         return network.compute(getAllInputs()).getData();
+    }
+    
+    public void avoidObstacles(Obstacle[] obs)
+    {
+        Rectangle[] obsRects = new Rectangle[obs.length];
+        Rectangle me = new Rectangle(x,y,height,width);
+        
+        //Loop through obstacles and create rectangles
+        for(int i = 0; i < obs.length; i++)
+        {
+            obsRects[i] = new Rectangle(obs[i].getX(), obs[i].getY(), obs[i].getHeight(), obs[i].getWidth());
+            
+            //Check if collision
+            if(obsRects[i].intersects(me))
+            {
+
+                double dX = obsRects[i].getX() - me.getX();
+                double dY = obsRects[i].getY() - me.getY();
+                
+                //Check where obstacle is
+                //Obstacle is to the right
+                if(dX > 0)
+                {
+                    //Move left
+                    x = (int) (obsRects[i].getX() - width*1.5);
+                }
+                //Obstacle is to the left
+                if (dX <= 0)
+                {
+                    //Move right
+                    x = (int) (obsRects[i].getX() + width*1.5);
+                }
+                //Obstacle is above
+                if(dY <= 0)
+                {
+                    //Move down
+                    y = (int) (obsRects[i].getY() + height*1.5);
+                }
+                //Obstacle is below
+                if (dY > 0)
+                {
+                    //Move up
+                    y = (int) (obsRects[i].getY() - height*1.5);
+                }
+                
+                sprite.setLocation(x,y);
+            }
+        }
+ 
+    }
+    
+    public void avoidWalls(JPanel GamePanel)
+    {
+        Rectangle gp = GamePanel.getBounds();
+        Rectangle me = new Rectangle(x,y,height,width);
+        
+        //Reset left
+        if(me.getMaxX() >= gp.getMaxX() - 5)
+        {
+            sprite.setLocation((int) me.getX() - width, (int) me.getY());
+            xSpeed = -xSpeed;
+        }
+        //Reset right
+        if(me.getMinX() <= gp.getMinX() + 5)
+        {
+            sprite.setLocation((int)me.getX() + width, (int) me.getY());
+        }
+        //Reset up
+        if(me.getMaxY() >= gp.getMaxY() - 5)
+        {
+            sprite.setLocation((int) me.getX(), (int) me.getY() - height);
+            ySpeed = -ySpeed;
+        }
+        //Reset down
+        if(me.getMinY() <= gp.getMinY() + 5)
+        {
+            sprite.setLocation((int) me.getX(), (int) me.getY() + height);
+        }
+    }
+    
+    public void save()
+    {
+         try {
+                FileOutputStream out = new FileOutputStream(new File(name + ".model"));
+                ObjectOutputStream o = new ObjectOutputStream(out);
+                o.writeObject(network);
+                out.close();
+                o.close();
+                System.gc();
+                System.out.println(name + " saved!");
+            } catch (Exception e) {
+                System.out.println("Exception thrown when trying to save network!");
+            }
+    }
+    
+    public void loadFromFile(String file)
+    {
+        try {
+                FileInputStream out = new FileInputStream(new File(name + ".model"));
+                ObjectInputStream o = new ObjectInputStream(out);
+                this.network = (NEATNetwork) o.readObject();
+                out.close();
+                o.close();
+                System.gc();
+                System.out.println(name + " Loaded!");
+            } catch (Exception e) {
+                System.out.println("Exception thrown when trying to load network!");
+            }
     }
 
     public MLDataSet getInputDataset() {
@@ -351,6 +465,14 @@ public class AIPlayer {
 
     public void setWins(int wins) {
         this.wins = wins;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     
