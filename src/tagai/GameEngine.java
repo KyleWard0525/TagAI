@@ -41,6 +41,10 @@ public class GameEngine implements Runnable{
         this.player1 = new AIPlayer(gm);
         this.player2 = new AIPlayer(gm);
         
+        //Set AI names
+        player1.setName("player1");
+        player2.setName("player2");
+        
         //Create sprites
         this.p1Sprite = new JPanel();
         this.p2Sprite = new JPanel();
@@ -88,6 +92,9 @@ public class GameEngine implements Runnable{
         
         GamePanel.add(p1Sprite);
         GamePanel.add(p2Sprite);
+        
+        gameMap.createObstacles();
+        
         timer.start();
         GamePanel.repaint();
     }
@@ -128,6 +135,10 @@ public class GameEngine implements Runnable{
             String p2MoveAction = "";
             int p1Choice = 0;
             int p2Choice = 0;
+            
+            Obstacle[] obstacles = gameMap.getObstacles();
+            
+            
             
             //Get moves from both players
             double[] p1Move = player1.getMove();
@@ -222,22 +233,32 @@ public class GameEngine implements Runnable{
             p1Sprite.setLocation(player1.getX(), player1.getY());
             }
             else {
+                player1.setX(GamePanel.getWidth() / 3);
+                player1.setY(GamePanel.getHeight() / 3);
+                p1Sprite.setLocation(player1.getX(), player1.getY());
+                
                 //Player 2 wins
-                player2.kill(player1);
+                //player2.kill(player1);
                 System.gc();
             }
            if(GamePanel.contains((int) player2Rect.getCenterX() - player2.width/2, (int) player2Rect.getCenterY() - player2.height/2) && GamePanel.contains((int) player2Rect.getCenterX() + player2.width/2, (int) player2Rect.getCenterY() + player2.height/2)) {
             p2Sprite.setLocation(player2.getX(), player2.getY());
             }
-           else{
-               //Player 1 wins
-                player1.kill(player2);
+           else{    
+               player2.setX(GamePanel.getWidth() / 2);
+               player2.setY(GamePanel.getHeight() / 2);
+               
+               p2Sprite.setLocation(player2.getX() , player2.getY());
+                //Player 1 wins
+                //player1.kill(player2);
                 System.gc();
            }
             
-           
+           //Avoid obstacles
+           player1.avoidObstacles(obstacles);
+           player2.avoidObstacles(obstacles);
             
-            GamePanel.repaint();
+           GamePanel.repaint();
         }
         
     };
